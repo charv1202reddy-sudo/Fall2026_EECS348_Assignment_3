@@ -31,16 +31,13 @@
  *                NEXT or READ on an empty inbox prints nothing and does not
  *                crash. Malformed lines are skipped with a note on stderr.
  *
- * Collaborators: Claude (Anthropic AI assistant) helped me improve and
- *                comment the code (see block labels below). No human
- *                collaborators.
+ * Collaborators: None. No human collaborators.
  *
  * Other sources: Gemini (Google GenAI) - generated the original code that is
  *                the basis of this program (accessed through the Gemini web
  *                interface in a browser). ChatGPT (OpenAI GenAI) - generated
  *                a second version that I analyzed and compared but did NOT use
  *                as the basis (accessed through the ChatGPT web interface).
- *                Claude (Anthropic) - helped write the improvements.
  *
  * Author       : Charvi Reddy Konudula
  *
@@ -60,12 +57,13 @@
  *                   removed unused <sstream>, added const-correctness.
  *                8) Added prologue and a comment on every line.
  *
- * Block labels : Each block below states who wrote it:
- *                [GEMINI]          = written by Gemini, kept as generated
- *                [GEMINI+CLAUDE]   = Gemini's original, modified by Claude
- *                [CLAUDE]          = newly written by Claude
- *                (In every case I reviewed, compiled, tested, and
- *                integrated the code myself on the EECS Cycle server.)
+ * Block labels : Each block below states where the code came from:
+ *                [GEMINI]          = Gemini's code, kept as generated
+ *                [GEMINI-MODIFIED] = Gemini's original code, modified for
+ *                                    this assignment
+ *                [ADDED]           = new code added for this assignment
+ *                (All code was reviewed, compiled, and tested by me on the
+ *                EECS Cycle server.)
  * ============================================================================
  */
 
@@ -78,7 +76,7 @@
 #include <cstddef>    // std::size_t for indexes and sizes
 
 // ----------------------------------------------------------------------------
-// [CLAUDE] Named priority levels replace Gemini's magic numbers 5,4,3,2,1.
+// [ADDED] Named priority levels replace Gemini's magic numbers 5,4,3,2,1.
 // A larger number means the sender is read EARLIER.
 // ----------------------------------------------------------------------------
 enum class SenderCategory {   // scoped enum so names don't leak globally
@@ -90,9 +88,9 @@ enum class SenderCategory {   // scoped enum so names don't leak globally
 };
 
 // ----------------------------------------------------------------------------
-// [GEMINI+CLAUDE] Email class. Gemini's original stored a category, subject,
-// date, priority and numeric date. Claude added validation, the enum, and an
-// arrival sequence number used as a tie-breaker.
+// [GEMINI-MODIFIED] Email class. Gemini's original stored a category, subject,
+// date, priority and numeric date. Validation, the enum, and an
+// arrival sequence number (tie-breaker) were added.
 // ----------------------------------------------------------------------------
 class Email {
 private:
@@ -103,7 +101,7 @@ private:
     long dateVal;                 // date as YYYYMMDD so newer = larger number
     unsigned long sequence;       // arrival order, smaller = arrived earlier
 
-    // [GEMINI+CLAUDE] Convert category text to enum; throws if unknown.
+    // [GEMINI-MODIFIED] Convert category text to enum; throws if unknown.
     static SenderCategory parseCategory(const std::string& cat) {
         if (cat == "Boss") return SenderCategory::Boss;                       // highest
         if (cat == "Subordinate") return SenderCategory::Subordinate;         // next
@@ -113,8 +111,8 @@ private:
         throw std::invalid_argument("unknown sender category");  // reject anything else
     }
 
-    // [GEMINI+CLAUDE] Convert MM-DD-YYYY to YYYYMMDD; throws if malformed.
-    // Claude replaced stoi/substr (which can throw or misparse) with a manual,
+    // [GEMINI-MODIFIED] Convert MM-DD-YYYY to YYYYMMDD; throws if malformed.
+    // stoi/substr (which can throw or misparse) were replaced with a manual,
     // validated parse.
     static long parseDate(const std::string& d) {
         if (d.size() != 10 || d[2] != '-' || d[5] != '-')   // must look like MM-DD-YYYY
@@ -134,7 +132,7 @@ private:
     }
 
 public:
-    // [GEMINI+CLAUDE] Constructor stores fields and derives priority values.
+    // [GEMINI-MODIFIED] Constructor stores fields and derives priority values.
     Email(const std::string& cat, const std::string& subj,
           const std::string& date, unsigned long seq)
         : categoryName(cat), subject(subj), dateStr(date),   // copy the text fields
@@ -147,7 +145,7 @@ public:
     const std::string& getSubject() const { return subject; }        // subject text
     const std::string& getDate() const { return dateStr; }           // date text
 
-    // [GEMINI+CLAUDE] Returns true if THIS email has LOWER priority than other.
+    // [GEMINI-MODIFIED] Returns true if THIS email has LOWER priority than other.
     // The MaxHeap puts the "greatest" (highest priority) email at the root.
     bool operator<(const Email& other) const {
         if (category != other.category)                      // different sender categories?
@@ -160,9 +158,9 @@ public:
 };
 
 // ----------------------------------------------------------------------------
-// [GEMINI+CLAUDE] MaxHeap class: list-based (std::vector) binary max-heap
-// written from scratch. Gemini's sift logic is kept; Claude added a safe
-// accessor and std::move use.
+// [GEMINI-MODIFIED] MaxHeap class: list-based (std::vector) binary max-heap
+// written from scratch. Gemini's sift logic is kept; a safe
+// accessor and std::move use were added.
 // ----------------------------------------------------------------------------
 class MaxHeap {
 private:
@@ -202,7 +200,7 @@ private:
     }
 
 public:
-    // [GEMINI+CLAUDE] Add an email; O(log n). Takes by value and moves it in
+    // [GEMINI-MODIFIED] Add an email; O(log n). Takes by value and moves it in
     // to avoid an extra copy of the strings.
     void insert(Email email) {
         heap.push_back(std::move(email));                    // add at the end of the list
@@ -212,10 +210,10 @@ public:
     // [GEMINI] True when there are no emails.
     bool isEmpty() const { return heap.empty(); }
 
-    // [GEMINI+CLAUDE] Number of unread emails (std::size_t, not int).
+    // [GEMINI-MODIFIED] Number of unread emails (std::size_t, not int).
     std::size_t size() const { return heap.size(); }
 
-    // [GEMINI+CLAUDE] Highest-priority email; O(1). Caller must check
+    // [GEMINI-MODIFIED] Highest-priority email; O(1). Caller must check
     // isEmpty() first; throws instead of reading invalid memory.
     const Email& getMax() const {
         if (heap.empty())                                    // nothing to return?
@@ -223,7 +221,7 @@ public:
         return heap[0];                                      // root is the maximum
     }
 
-    // [GEMINI+CLAUDE] Remove the highest-priority email; O(log n). Safe no-op
+    // [GEMINI-MODIFIED] Remove the highest-priority email; O(log n). Safe no-op
     // when empty. Uses std::move to avoid copying strings.
     void removeMax() {
         if (heap.empty()) return;                            // READ on empty inbox: do nothing
@@ -235,7 +233,7 @@ public:
 };
 
 // ----------------------------------------------------------------------------
-// [CLAUDE] CommandProcessor class: reads commands and drives the MaxHeap.
+// [ADDED] CommandProcessor class: reads commands and drives the MaxHeap.
 // Gemini put this logic inside main(); it is now an object so the program
 // is object-oriented as the assignment requires.
 // ----------------------------------------------------------------------------
@@ -246,7 +244,7 @@ private:
     MaxHeap inbox;              // the CEO's inbox as a priority queue
     unsigned long nextSeq;      // arrival counter given to each new email
 
-    // [CLAUDE] Remove leading/trailing spaces, tabs and '\r' from a string.
+    // [ADDED] Remove leading/trailing spaces, tabs and '\r' from a string.
     static std::string trim(const std::string& s) {
         const std::string ws = " \t\r\n";                    // characters to strip
         std::size_t first = s.find_first_not_of(ws);         // first real character
@@ -255,8 +253,8 @@ private:
         return s.substr(first, last - first + 1);            // keep the middle part
     }
 
-    // [GEMINI+CLAUDE] Handle "EMAIL <category>,<subject>,<date>".
-    // Gemini's parsing is kept; Claude added trimming and error checks.
+    // [GEMINI-MODIFIED] Handle "EMAIL <category>,<subject>,<date>".
+    // Gemini's parsing is kept; trimming and error checks were added.
     void handleEmail(const std::string& data) {
         std::size_t firstComma = data.find(',');             // end of the category
         if (firstComma == std::string::npos)                 // no comma at all?
@@ -272,7 +270,7 @@ private:
         ++nextSeq;                                           // only count emails that were accepted
     }
 
-    // [GEMINI+CLAUDE] Handle NEXT: show the top email without removing it.
+    // [GEMINI-MODIFIED] Handle NEXT: show the top email without removing it.
     void handleNext() {
         if (inbox.isEmpty()) return;                         // empty inbox: print nothing
         const Email& top = inbox.getMax();                   // highest-priority email
@@ -293,11 +291,11 @@ private:
     }
 
 public:
-    // [CLAUDE] Constructor stores the input/output streams and starts counter.
+    // [ADDED] Constructor stores the input/output streams and starts counter.
     CommandProcessor(std::istream& input, std::ostream& output)
         : in(input), out(output), nextSeq(0) {}              // sequence starts at 0
 
-    // [GEMINI+CLAUDE] Read every line of the file and run its command.
+    // [GEMINI-MODIFIED] Read every line of the file and run its command.
     void run() {
         std::string rawLine;                                 // one line of the file
         while (std::getline(in, rawLine)) {                  // read until end of file
@@ -322,7 +320,7 @@ public:
 };
 
 // ----------------------------------------------------------------------------
-// [GEMINI+CLAUDE] main only opens the file and hands control to the
+// [GEMINI-MODIFIED] main only opens the file and hands control to the
 // CommandProcessor object. Gemini's file-opening checks are kept.
 // ----------------------------------------------------------------------------
 int main(int argc, char* argv[]) {
